@@ -53,6 +53,23 @@ func Scan(interfaceName string) ([]Cell, error) {
 	return parse(string(out))
 }
 
+func Status(interfaceName string) (Cell, error) {
+	// execute iwconfig
+	cmd := exec.Command("iwcfonig", interfaceName)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return Cell{}, err
+	}
+
+	// parse fetched result
+
+	output, err := parse(string(out))
+	if err != nil || len(output) == 0 {
+		return Cell{}, err
+	}
+	return output[0], err
+}
+
 func parse(input string) (cells []Cell, err error) {
 	lines := strings.Split(input, "\n")
 
