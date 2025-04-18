@@ -31,13 +31,13 @@ type Cell struct {
 func init() {
 	// precompile regexp
 	regxp = [7]*regexp.Regexp{
-		regexp.MustCompile(`^ESSID:\"(?P<essid>.*)\"$`),
-		regexp.MustCompile(`^Mode:(?P<mode>.+)$`),
-		regexp.MustCompile(`^Frequency:(?P<frequency>[\d.]+) (?P<frequency_units>.+) \(Channel (?P<channel>\d+)\)$`),
-		regexp.MustCompile(`^Encryption key:(?P<encryption_key>.+)$`),
-		regexp.MustCompile(`^IE:\ WPA\ Version\ (?P<wpa>.+)$`),
-		regexp.MustCompile(`^IE:\ IEEE\ 802\.11i/WPA2\ Version\ (?P<wpa2>)$`),
-		regexp.MustCompile(`^Quality=(?P<signal_quality>\d+)/(?P<signal_total>\d+)\s+Signal level=(?P<signal_level>.+) d.+$`),
+		regexp.MustCompile(`ESSID:\"(?P<essid>.*)\"`),
+		regexp.MustCompile(`Mode:(?P<mode>.+)`),
+		regexp.MustCompile(`Frequency:(?P<frequency>[\d.]+) (?P<frequency_units>.+) \(Channel (?P<channel>\d+)\)`),
+		regexp.MustCompile(`Encryption key:(?P<encryption_key>.+)`),
+		regexp.MustCompile(`IE:\ WPA\ Version\ (?P<wpa>.+)`),
+		regexp.MustCompile(`IE:\ IEEE\ 802\.11i/WPA2\ Version\ (?P<wpa2>)`),
+		regexp.MustCompile(`Quality=(?P<signal_quality>\d+)/(?P<signal_total>\d+)\s+Signal level=(?P<signal_level>.+) d.+`),
 	}
 }
 
@@ -55,19 +55,29 @@ func Scan(interfaceName string) ([]Cell, error) {
 
 func Status(interfaceName string) (Cell, error) {
 	// execute iwconfig
-	cmd := exec.Command("iwcfonig", interfaceName)
+	cmd := exec.Command("iwconfig", interfaceName)
 	out, err := cmd.CombinedOutput()
+
+	cell := Cell{}
+
 	if err != nil {
-		return Cell{}, err
+		return cell, err
 	}
 
-	// parse fetched result
+	lines := strings.Split(string(out), "\n")
 
-	output, err := parse(string(out))
-	if err != nil || len(output) == 0 {
-		return Cell{}, err
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		var wg sync.WaitGroup
+		var m sync.Mutex
+		wg.Add(len(regxp))
+		for _, reg := range regxp {
+			go compare(line, &wg, &m, &cell, reg)
+		}
+		wg.Wait()
 	}
-	return output[0], err
+
+	return cell, err
 }
 
 func parse(input string) (cells []Cell, err error) {
