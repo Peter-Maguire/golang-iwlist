@@ -9,7 +9,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/MonkeyBuisness/golang-iwlist"
+	"github.com/peter-maguire/golang-iwlist"
 )
 
 func main() {
