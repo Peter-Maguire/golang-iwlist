@@ -1,3 +1,3 @@
-module github.com/MonkeyBusiness/golang-iwlist
+module github.com/peter-maguire/golang-iwlist
 
 go 1.18
